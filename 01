@@ -1,0 +1,6 @@
+import numpy as np
+A = np.arange(1000)
+print(A)
+print("Тип даних масиву A:", A.dtype)
+B = A.astype(np.float32)
+print("Тип даних масиву B:", B.dtype)
