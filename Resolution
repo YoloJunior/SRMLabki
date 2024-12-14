@@ -1,0 +1,138 @@
+from sympy import Not, Or, And, to_cnf
+from itertools import combinations
+from sympy.parsing.sympy_parser import parse_expr
+import re
+
+def get_clauses(expr):
+    if isinstance(expr, And):
+        return [clause for clause in expr.args]
+    else:
+        return [expr]
+
+def negate(expr):
+    return Not(expr)
+
+# Функції для парсингу та валідації виразів
+def is_valid_expression(expr_str):
+    pattern = '[a-z&|~><]'
+    return re.match(pattern, expr_str) is not None
+
+def safe_parse_expr(expr_str):
+    if is_valid_expression(expr_str):
+        try:
+            expr = parse_expr(expr_str, evaluate=False)
+            return False, expr
+        except Exception as e:
+            return True, str(e)
+    else:
+        return True, "\"Вираз містить недопустимі символи або неправильний формат.\""
+
+def resolution(ds, alpha):
+    clauses = set(get_clauses(to_cnf(ds)))
+    neg_alpha = negate(alpha)
+    clauses |= set(get_clauses(to_cnf(neg_alpha)))
+
+    # Створення словника для відстеження історії клауз
+    clause_history = {}
+    clause_id = 1
+    for clause in clauses:
+        clause_history[clause_id] = clause
+        clause_id += 1
+
+    new = set()
+    processed_pairs = set()
+
+    print("\nЗаперечення висновку додано як новий диз’юнкт(и)")
+    print()
+    print("Початкові диз’юнкти:")
+    for cid, clause in clause_history.items():
+        print(f"Клауза {cid}: {clause}")
+    print()
+
+    while True:
+        pairs = list(combinations(clause_history.items(), 2))
+        any_new = False
+        for (cid1, ci), (cid2, cj) in pairs:
+            if (cid1, cid2) in processed_pairs or (cid2, cid1) in processed_pairs:
+                continue
+            processed_pairs.add((cid1, cid2))
+            resolvents = resolve(ci, cj)
+            for resolvent in resolvents:
+                if not resolvent:
+                    print()
+                    print(f"Порожній диз’юнкт утворено шляхом резолюції Клауз {cid1} та Клауз {cid2}.")
+                    return True
+                # Перевірка, чи вже існує така клауза
+                exists = False
+                for existing in clause_history.values():
+                    if existing == resolvent:
+                        exists = True
+                        break
+                if not exists:
+                    print(f"Резолюція Клауз {cid1} та Клауз {cid2} дає Клауз {clause_id}: {resolvent}")
+                    clause_history[clause_id] = resolvent
+                    clause_id += 1
+                    any_new = True
+        if not any_new:
+            print()
+            print("\nРезолюція завершена. Порожній диз’юнкт не утворено.")
+            return False
+
+
+def resolve(ci, cj):
+    resolvents = []
+    for di in ci.args if isinstance(ci, Or) else [ci]:
+        for dj in cj.args if isinstance(cj, Or) else [cj]:
+            if di == Not(dj) or Not(di) == dj:
+                # Видаляємо діюче літерал і об'єднуємо решту
+                new_clause = set(ci.args if isinstance(ci, Or) else [ci])
+                new_clause |= set(cj.args if isinstance(cj, Or) else [cj])
+                new_clause.discard(di)
+                new_clause.discard(dj)
+                if not new_clause:
+                    resolvents.append(False)
+                else:
+                    resolvents.append(Or(*new_clause) if len(new_clause) > 1 else next(iter(new_clause)))
+    return resolvents
+
+
+def main():
+    print("=== Алгоритм Резолюції для Логіки Висловлень ===")
+    n = input("Введіть кількість висловлень: ")
+    if not n.isdigit():
+        print("Введіть ціле число")
+        return
+    n = int(n)
+    if n < 1:
+        print("Кількість висловлень має бути більше 0")
+        return
+    print("Введіть висловлення у логіці висловлень (наприклад: ~(p & q), ~r >> q):")
+    ds_exprs = []
+    for i in range(n):
+        expr_str = input(f"Вислів[{i + 1}]: ")
+        error, expr = safe_parse_expr(expr_str)
+        if error:
+            print(f"Помилка при парсінгу виразу: {expr}")
+            return
+        ds_exprs.append(expr)
+    print("Введіть висновок у логіці висловлень (наприклад: p >> r):")
+    alpha_str = input("Висновок: ")
+    error, alpha = safe_parse_expr(alpha_str)
+    if error:
+        print(f"Помилка при парсінгу висновку: {alpha}")
+        return
+
+    kb = And(*ds_exprs)
+
+    result = resolution(kb, alpha)
+
+    if result:
+        print()
+        print("Виведення можливе: множина невиконувана (теорема доведена).")
+    else:
+        print()
+        print("Виведення неможливе: множина може бути виконуваною.")
+
+
+if __name__ == "__main__":
+    main()
