@@ -1,0 +1,228 @@
+import networkx as nx
+import matplotlib.pyplot as plt
+
+class TreeNode:
+    def __init__(self, value):
+        self.value = value
+        self.left = None
+        self.right = None
+
+def is_directed(adjacency_matrix):
+    n = len(adjacency_matrix)
+    symmetric = True
+    for i in range(n):
+        for j in range(n):
+            if adjacency_matrix[i][j] != adjacency_matrix[j][i]:
+                symmetric = False
+                break
+        if not symmetric:
+            break
+    if symmetric:
+        print("Матриця суміжності симетрична. Граф може бути як неорієнтованим, так і орієнтованим.")
+    else:
+        print("Матриця суміжності несиметрична. Граф є орієнтованим.")
+    return symmetric
+
+def build_expression_tree(expression):
+    precedence = {'+':1, '-':1, '*':2, '/':2}
+
+    def parse(tokens):
+        output = []
+        stack = []
+        for token in tokens:
+            if token.isdigit():
+                output.append(TreeNode(token))
+            elif token in precedence:
+                while stack and stack[-1].value in precedence and precedence[stack[-1].value] >= precedence[token]:
+                    output.append(stack.pop())
+                stack.append(TreeNode(token))
+            elif token == '(':
+                stack.append(TreeNode(token))
+            elif token == ')':
+                while stack and stack[-1].value != '(':
+                    output.append(stack.pop())
+                stack.pop()  # Видаляємо '('
+        while stack:
+            output.append(stack.pop())
+        return output
+
+    tokens = []
+    num = ''
+    for char in expression:
+        if char.isdigit():
+            num += char
+        else:
+            if num:
+                tokens.append(num)
+                num = ''
+            if char in "+-*/()":
+                tokens.append(char)
+    if num:
+        tokens.append(num)
+
+    postfix = parse(tokens)
+
+    stack = []
+    for node in postfix:
+        if node.value.isdigit():
+            stack.append(node)
+        else:
+            node.right = stack.pop()
+            node.left = stack.pop()
+            stack.append(node)
+    return stack[-1] if stack else None
+
+def print_tree(node, level=0, label="."):
+    if node is not None:
+        print(" " * (level*4) + label + ": " + str(node.value))
+        print_tree(node.left, level+1, "L")
+        print_tree(node.right, level+1, "R")
+
+def preorder_traversal(node, traversal=[]):
+    if node:
+        traversal.append(node.value)
+        preorder_traversal(node.left, traversal)
+        preorder_traversal(node.right, traversal)
+    return traversal
+
+def postorder_traversal(node, traversal=[]):
+    if node:
+        postorder_traversal(node.left, traversal)
+        postorder_traversal(node.right, traversal)
+        traversal.append(node.value)
+    return traversal
+
+def evaluate_postfix(postfix_tokens):
+    stack = []
+    for token in postfix_tokens:
+        if token.isdigit():
+            stack.append(int(token))
+        else:
+            b = stack.pop()
+            a = stack.pop()
+            if token == '+':
+                result = a + b
+            elif token == '-':
+                result = a - b
+            elif token == '*':
+                result = a * b
+            elif token == '/':
+                result = a / b
+            stack.append(result)
+            print(f"Обчислюємо: {a} {token} {b} = {result}")
+    return stack[0] if stack else None
+
+def evaluate_prefix(prefix_tokens):
+    stack = []
+    for token in reversed(prefix_tokens):
+        if token.isdigit():
+            stack.append(int(token))
+        else:
+            a = stack.pop()
+            b = stack.pop()
+            if token == '+':
+                result = a + b
+            elif token == '-':
+                result = a - b
+            elif token == '*':
+                result = a * b
+            elif token == '/':
+                result = a / b
+            stack.append(result)
+            print(f"Обчислюємо: {a} {token} {b} = {result}")
+    return stack[0] if stack else None
+
+def draw_graph(adjacency_matrix, directed=False):
+    G = nx.DiGraph() if directed else nx.Graph()
+    n = len(adjacency_matrix)
+    G.add_nodes_from(range(n))
+    for i in range(n):
+        for j in range(n):
+            if adjacency_matrix[i][j]:
+                G.add_edge(i, j)
+    pos = nx.spring_layout(G)
+    plt.figure(figsize=(8,6))
+    nx.draw_networkx_nodes(G, pos, node_size=700, node_color='lightblue')
+    if directed:
+        nx.draw_networkx_edges(G, pos, arrowstyle='->', arrowsize=20)
+    else:
+        nx.draw_networkx_edges(G, pos)
+    labels = {i: str(i) for i in G.nodes()}
+    nx.draw_networkx_labels(G, pos, labels, font_size=12)
+    plt.title("Візуалізація графа")
+    plt.axis('off')
+    plt.show()
+
+def print_adjacency_list(adjacency_matrix):
+    print("Текстова версія графа:")
+    for i, row in enumerate(adjacency_matrix):
+        connections = [j for j, val in enumerate(row) if val]
+        connections_str = ', '.join(map(str, connections)) if connections else 'Немає з\'єднань'
+        print(f"Вузол {i}: {connections_str}")
+    print()
+
+def main():
+    # Завдання а
+    adjacency_matrix = [
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 0, 0],
+        [0, 0, 0, 1, 1],
+        [0, 1, 1, 0, 0],
+        [0, 1, 0, 0, 0]
+    ]
+
+    print("Завдання а:")
+    symmetric = is_directed(adjacency_matrix)
+    directed = not symmetric
+    print("\n")
+
+    # Виведення графа у консоль
+    if symmetric:
+        print("Граф може бути як неорієнтованим, так і орієнтованим. Виберіть режим:")
+        print("1. Неорієнтований")
+        print("2. Орієнтований")
+        choice = input("Введіть 1 або 2: ")
+        if choice == '1':
+            directed = False
+        elif choice == '2':
+            directed = True
+        else:
+            print("Невірний вибір. За замовчуванням встановлено орієнтований граф.")
+            directed = True
+    else:
+        directed = True
+
+    # Виведення різних представлень графа
+    print_adjacency_list(adjacency_matrix)
+
+    # Візуалізація графа
+    draw_graph(adjacency_matrix, directed=directed)
+    print("\n")
+
+    # Завдання b
+    expression = "((12+8)/(3*7-1))"
+    print("Завдання b:")
+    root = build_expression_tree(expression)
+    print("Бінарне дерево для виразу", expression, ":")
+    print_tree(root)
+    print("\n")
+
+    # Завдання c
+    print("Завдання c:")
+
+    preorder = preorder_traversal(root, [])
+    print("Прямий обхід (Префіксний запис):", ' '.join(preorder))
+
+    postorder = postorder_traversal(root, [])
+    print("Зворотній обхід (Постфіксний запис):", ' '.join(postorder))
+
+    print("\nОбчислення виразу у префіксному записі:")
+    prefix_result = evaluate_prefix(preorder.copy())
+    print("Результат префіксного обчислення:", prefix_result)
+
+    print("\nОбчислення виразу у постфіксному записі:")
+    postfix_result = evaluate_postfix(postorder.copy())
+    print("Результат постфіксного обчислення:", postfix_result)
+
+if __name__ == "__main__":
+    main()
