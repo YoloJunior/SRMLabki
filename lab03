@@ -1,0 +1,127 @@
+
+def union(A, B):
+    result = A[:]
+    for element in B:
+        if element not in result:
+            result.append(element)
+    return result
+
+def intersection(A, B):
+    result = []
+    for element in A:
+        if element in B:
+            result.append(element)
+    return result
+
+def difference(A, B):
+    result = []
+    for element in A:
+        if element not in B:
+            result.append(element)
+    return result
+
+def symmetric_difference(A, B):
+    result = []
+    for element in A:
+        if element not in B:
+            result.append(element)
+    for element in B:
+        if element not in A:
+            result.append(element)
+    return result
+
+def cartesian_product(A, B):
+    result = []
+    for a in A:
+        for b in B:
+            result.append((a, b))
+    return result
+
+def is_subset(A, B):
+    for element in A:
+        if element not in B:
+            return False
+    return True
+
+def are_equal(A, B):
+    return is_subset(A, B) and is_subset(B, A)
+
+def to_bit_string(A, universal_set):
+    bit_string = ''
+    for element in universal_set:
+        if element in A:
+            bit_string += '1'
+        else:
+            bit_string += '0'
+    return bit_string
+
+
+def bitwise_union(A_bits, B_bits):
+    return ''.join('1' if a == '1' or b == '1' else '0' for a, b in zip(A_bits, B_bits))
+
+def bitwise_intersection(A_bits, B_bits):
+    return ''.join('1' if a == '1' and b == '1' else '0' for a, b in zip(A_bits, B_bits))
+
+def bitwise_difference(A_bits, B_bits):
+    return ''.join('1' if a == '1' and b == '0' else '0' for a, b in zip(A_bits, B_bits))
+
+def bitwise_symmetric_difference(A_bits, B_bits):
+    return ''.join('1' if (a == '1' and b == '0') or (a == '0' and b == '1') else '0' for a, b in zip(A_bits, B_bits))
+
+def bit_string_to_set(bit_string, universal_set):
+    result = []
+    for index, bit in enumerate(bit_string):
+        if bit == '1':
+            result.append(universal_set[index])
+    return result
+
+
+def main():
+
+    def get_valid_set(prompt):
+        while True:
+            try:
+                user_input = input(prompt)
+                user_set = list(map(int, user_input.split()))
+                return sorted(list(set(user_set)))
+            except ValueError:
+                print("Будь ласка, введіть тільки числа, розділені пробілами.")
+
+
+    A = get_valid_set("Введіть елементи множини A (розділені пробілами): ")
+    B = get_valid_set("Введіть елементи множини B (розділені пробілами): ")
+
+
+    universal_set = sorted(list(set(A + B)))
+
+    print(f"\nУніверсальна множина: {universal_set}")
+
+
+    print(f"Об'єднання: {union(A, B)}")
+    print(f"Перетин: {intersection(A, B)}")
+    print(f"Різниця A - B: {difference(A, B)}")
+    print(f"Симетрична різниця: {symmetric_difference(A, B)}")
+    print(f"Декартовий добуток: {cartesian_product(A, B)}")
+
+
+    print(f"Чи є A підмножиною B: {is_subset(A, B)}")
+    print(f"Чи рівні A і B: {are_equal(A, B)}")
+
+
+    A_bits = to_bit_string(A, universal_set)
+    B_bits = to_bit_string(B, universal_set)
+    print(f"Бітовий рядок для A: {A_bits}")
+    print(f"Бітовий рядок для B: {B_bits}")
+
+
+    print(f"Об'єднання бітових рядків: {bitwise_union(A_bits, B_bits)}")
+    print(f"Перетин бітових рядків: {bitwise_intersection(A_bits, B_bits)}")
+    print(f"Різниця бітових рядків A - B: {bitwise_difference(A_bits, B_bits)}")
+    print(f"Симетрична різниця бітових рядків: {bitwise_symmetric_difference(A_bits, B_bits)}")
+
+    print(f"Об'єднання (бітове -> множина): {bit_string_to_set(bitwise_union(A_bits, B_bits), universal_set)}")
+    print(f"Перетин (бітове -> множина): {bit_string_to_set(bitwise_intersection(A_bits, B_bits), universal_set)}")
+    print(f"Різниця (бітове -> множина): {bit_string_to_set(bitwise_difference(A_bits, B_bits), universal_set)}")
+    print(f"Симетрична різниця (бітове -> множина): {bit_string_to_set(bitwise_symmetric_difference(A_bits, B_bits), universal_set)}")
+
+main()
