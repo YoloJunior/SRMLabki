@@ -1,12 +1,13 @@
 import pandas as pd
 
+
 class BoolFunction:
     def __init__(self, F, x, y, z):
         self.F = list(F)
         self.x = list(x)
         self.y = list(y)
         self.z = list(z)
-    
+
     def truth_table(self):
         truth_table = {
             "x": self.x,
@@ -15,7 +16,7 @@ class BoolFunction:
             "F(x, y, z)": self.F
         }
         return pd.DataFrame(truth_table)
-    
+
     def dual_function(self):
         x_dual = [str(1 - int(bit)) for bit in self.x]
         y_dual = [str(1 - int(bit)) for bit in self.y]
@@ -35,7 +36,7 @@ class BoolFunction:
             "F*(x, y, z)": dual_values
         }
         return pd.DataFrame(dual_table)
-    
+
     def dnf(self):
         minterms = []
         for xi, yi, zi, fi in zip(self.x, self.y, self.z, self.F):
@@ -47,10 +48,10 @@ class BoolFunction:
                 minterm = " ∧ ".join(terms)
                 minterms.append(f"({minterm})")
         if not minterms:
-            return "0" 
+            return "0"
         dnf = " ∨ ".join(minterms)
         return dnf
-    
+
     def cnf(self):
         maxterms = []
         for xi, yi, zi, fi in zip(self.x, self.y, self.z, self.F):
@@ -65,7 +66,6 @@ class BoolFunction:
             return "1"
         cnf = " ∧ ".join(maxterms)
         return cnf
-    
 
     def karnaugh_map(self):
         yz_order = ['00', '01', '11', '10']
@@ -73,18 +73,17 @@ class BoolFunction:
         k_map = pd.DataFrame(columns=pd.MultiIndex.from_product([['y z'], yz_order]), index=['x=0', 'x=1'])
 
         for yz in yz_order:
-            index0 = 0 * 4 + yz_order.index(yz)  
-            index1 = 1 * 4 + yz_order.index(yz)  
+            index0 = 0 * 4 + yz_order.index(yz)
+            index1 = 1 * 4 + yz_order.index(yz)
             k_map.loc['x=0', ('y z', yz)] = self.F[index0]
             k_map.loc['x=1', ('y z', yz)] = self.F[index1]
 
         return k_map
 
-    
     def zhegalkin_polynomial(self):
         n = len(self.F)
-        coefficients = list(map(int, self.F)) 
-        pyramid = [coefficients[:]] 
+        coefficients = list(map(int, self.F))
+        pyramid = [coefficients[:]]
 
         for i in range(1, n):
             new_row = []
@@ -104,8 +103,8 @@ class BoolFunction:
 
         terms = []
         for index, coeff in enumerate(zhegalkin_coeffs):
-            if coeff == 1:  
-                binary_index = f"{index:03b}" 
+            if coeff == 1:
+                binary_index = f"{index:03b}"
                 term = []
                 if binary_index[0] == '1':
                     term.append("x")
@@ -117,28 +116,27 @@ class BoolFunction:
 
         polynomial = " ⊕ ".join(terms) if terms else "0"
         return polynomial
-    
-    
+
     def preserves_zero(self):
         return self.F[0] == '0'
-    
+
     def preserves_one(self):
         return self.F[-1] == '1'
-    
+
     def is_self_dual(self):
         dual_values = [str(1 - int(f)) for f in reversed(self.F)]
         return dual_values == self.F
-    
+
     def is_monotone(self):
         for i in range(len(self.F)):
             for j in range(i + 1, len(self.F)):
                 if (int(self.x[i]) <= int(self.x[j]) and
-                    int(self.y[i]) <= int(self.y[j]) and
-                    int(self.z[i]) <= int(self.z[j])):
+                        int(self.y[i]) <= int(self.y[j]) and
+                        int(self.z[i]) <= int(self.z[j])):
                     if self.F[i] > self.F[j]:
                         return False
         return True
-    
+
     def is_linear(self):
         n = len(self.F)
         coefficients = list(map(int, self.F))
@@ -147,17 +145,18 @@ class BoolFunction:
                 coefficients[j] ^= coefficients[j + 1]
         for index, coeff in enumerate(coefficients):
             if coeff == 1:
-                if bin(index).count('1') > 1: 
+                if bin(index).count('1') > 1:
                     return False
         return True
+
 
 def main():
     x = '00001111'
     y = '00110011'
     z = '01010101'
-    
+
     while True:
-        F = input("Введіть значення F як бінарний рядок з 8 символів (наприклад, 11101101): ")
+        F = input("Введіть значення F як бінарний рядок з 8 символів (наприклад, 00110101): ")
         if len(F) != 8:
             print("Помилка: Рядок F повинен містити рівно 8 символів.")
             continue
@@ -165,9 +164,9 @@ def main():
             print("Помилка: Рядок F повинен містити лише символи '0' та '1'.")
             continue
         break
-    
+
     bool_funct = BoolFunction(F, x, y, z)
-    
+
     print("Таблиця істинності F(x, y, z):\n", bool_funct.truth_table())
     print("----------------------")
     print("Двоїста функція F*(x, y, z):\n", bool_funct.dual_function())
@@ -184,10 +183,11 @@ def main():
     print("F = ", bool_funct.zhegalkin_polynomial())
     print("----------------------")
     print("Зберігає константу 0:", bool_funct.preserves_zero())
-    print("Зберігає константу 1:", bool_funct.preserves_one())  
-    print("Самодвоїста:", bool_funct.is_self_dual())  
-    print("Монотонна:", bool_funct.is_monotone())  
-    print("Лінійна:", bool_funct.is_linear())  
+    print("Зберігає константу 1:", bool_funct.preserves_one())
+    print("Самодвоїста:", bool_funct.is_self_dual())
+    print("Монотонна:", bool_funct.is_monotone())
+    print("Лінійна:", bool_funct.is_linear())
+
 
 if __name__ == "__main__":
     main()
